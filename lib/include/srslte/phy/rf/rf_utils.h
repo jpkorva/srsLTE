@@ -33,6 +33,10 @@ typedef struct SRSLTE_API {
   bool     force_tdd;
 } cell_search_cfg_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 SRSLTE_API int rf_rssi_scan(srslte_rf_t* rf, float* freqs, float* rssi, int nof_bands, double fs, int nsamp);
 
 SRSLTE_API int
@@ -51,5 +55,9 @@ SRSLTE_API int rf_search_and_decode_mib(srslte_rf_t*       rf,
                                         int                force_N_id_2,
                                         srslte_cell_t*     cell,
                                         float*             cfo);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SRSLTE_RF_UTILS_H

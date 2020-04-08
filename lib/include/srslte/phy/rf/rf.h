@@ -63,6 +63,10 @@ typedef struct {
   const char* msg;
 } srslte_rf_error_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*srslte_rf_error_handler_t)(srslte_rf_error_t error);
 
 SRSLTE_API int srslte_rf_open(srslte_rf_t* h, char* args);
@@ -161,5 +165,9 @@ SRSLTE_API int srslte_rf_send_multi(srslte_rf_t* rf,
                                     bool         blocking,
                                     bool         is_start_of_burst,
                                     bool         is_end_of_burst);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SRSLTE_RF_H

@@ -30,7 +30,7 @@ target_link_libraries(synch_file srslte_phy)
 #################################################################
 
 if(RF_FOUND)
-  add_executable(pdsch_ue pdsch_ue.c)
+  add_executable(pdsch_ue pdsch_ue.cc)
   target_link_libraries(pdsch_ue srslte_phy srslte_common srslte_rf pthread)
 
   add_executable(pdsch_enodeb pdsch_enodeb.c)
@@ -38,7 +38,7 @@ if(RF_FOUND)
 else(RF_FOUND)
   add_definitions(-DDISABLE_RF)
 
-  add_executable(pdsch_ue pdsch_ue.c)
+  add_executable(pdsch_ue pdsch_ue.cc)
   target_link_libraries(pdsch_ue srslte_common srslte_phy pthread)
 
   add_executable(pdsch_enodeb pdsch_enodeb.c)

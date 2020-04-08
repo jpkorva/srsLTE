@@ -128,8 +128,8 @@ void args_default(prog_args_t* args)
   args->file_cell_id                       = 0;
   args->file_offset_time                   = 0;
   args->file_offset_freq                   = 0;
-  args->rf_dev                             = "";
-  args->rf_args                            = "";
+  args->rf_dev                             = (char*)"";
+  args->rf_args                            = (char*)"";
   args->rf_freq                            = -1.0;
   args->rf_nof_rx_ant                      = 1;
   args->enable_cfo_ref                     = false;
@@ -141,9 +141,9 @@ void args_default(prog_args_t* args)
   args->rf_gain = 50.0;
 #endif
   args->net_port           = -1;
-  args->net_address        = "127.0.0.1";
+  args->net_address        = (char*)"127.0.0.1";
   args->net_port_signal    = -1;
-  args->net_address_signal = "127.0.0.1";
+  args->net_address_signal = (char*)"127.0.0.1";
   args->decimate           = 0;
   args->cpu_affinity       = -1;
   args->mbsfn_area_id      = -1;
@@ -346,7 +346,7 @@ int srslte_rf_recv_wrapper(void* h, cf_t* data_[SRSLTE_MAX_PORTS], uint32_t nsam
   for (int i = 0; i < SRSLTE_MAX_PORTS; i++) {
     ptr[i] = data_[i];
   }
-  return srslte_rf_recv_with_time_multi(h, ptr, nsamples, true, NULL, NULL);
+  return srslte_rf_recv_with_time_multi((srslte_rf_t*)h, ptr, nsamples, true, NULL, NULL);
 }
 
 static SRSLTE_AGC_CALLBACK(srslte_rf_set_rx_gain_th_wrapper_)
@@ -403,7 +403,7 @@ int main(int argc, char** argv)
 #endif /* ENABLE_GUI */
 
   for (int i = 0; i < SRSLTE_MAX_CODEWORDS; i++) {
-    data[i] = srslte_vec_malloc(sizeof(uint8_t) * 2000 * 8);
+    data[i] = (uint8_t*)srslte_vec_malloc(sizeof(uint8_t) * 2000 * 8);
     if (!data[i]) {
       ERROR("Allocating data");
       go_exit = true;
@@ -564,8 +564,8 @@ int main(int argc, char** argv)
 #endif
   }
 
-  for (int i = 0; i < prog_args.rf_nof_rx_ant; i++) {
-    sf_buffer[i] = srslte_vec_malloc(3 * sizeof(cf_t) * SRSLTE_SF_LEN_PRB(cell.nof_prb));
+  for (uint32_t i = 0; i < prog_args.rf_nof_rx_ant; i++) {
+    sf_buffer[i] = (cf_t*)srslte_vec_malloc(3 * sizeof(cf_t) * SRSLTE_SF_LEN_PRB(cell.nof_prb));
   }
   srslte_ue_mib_t ue_mib;
   if (srslte_ue_mib_init(&ue_mib, sf_buffer, cell.nof_prb)) {
@@ -680,7 +680,7 @@ int main(int argc, char** argv)
   uint64_t sf_cnt          = 0;
   uint32_t sfn             = 0;
   uint32_t last_decoded_tm = 0;
-  while (!go_exit && (sf_cnt < prog_args.nof_subframes || prog_args.nof_subframes == -1)) {
+  while (!go_exit && (prog_args.nof_subframes == -1 || sf_cnt < (uint64_t)prog_args.nof_subframes)) {
     char input[128];
     PRINT_LINE_INIT();
 
@@ -978,7 +978,7 @@ int main(int argc, char** argv)
       free(data[i]);
     }
   }
-  for (int i = 0; i < prog_args.rf_nof_rx_ant; i++) {
+  for (uint32_t i = 0; i < prog_args.rf_nof_rx_ant; i++) {
     if (sf_buffer[i]) {
       free(sf_buffer[i]);
     }
