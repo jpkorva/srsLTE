@@ -35,6 +35,7 @@
 #include "srslte/common/gen_mch_tables.h"
 #include "srslte/phy/io/filesink.h"
 #include "srslte/srslte.h"
+#include "srslte/common/mac_pcap.h"
 
 #define ENABLE_AGC_DEFAULT
 
@@ -52,6 +53,8 @@ cell_search_cfg_t cell_detect_config = {.max_frames_pbch      = SRSLTE_DEFAULT_M
 #else
 #pragma message "Compiling pdsch_ue with no RF support"
 #endif
+
+srslte::mac_pcap           mac_pcap;
 
 //#define STDOUT_COMPACT
 
@@ -451,6 +454,8 @@ int main(int argc, char** argv)
 
   float search_cell_cfo = 0;
 
+  mac_pcap.open("/var/tmp/pdsch_ue.pcap");
+
 #ifndef DISABLE_RF
   if (!prog_args.input_file_name) {
 
@@ -744,6 +749,8 @@ int main(int argc, char** argv)
               printf("Decoded MIB. SFN: %d, offset: %d\n", sfn, sfn_offset);
               sfn   = (sfn + sfn_offset) % 1024;
               state = DECODE_PDSCH;
+
+              mac_pcap.write_dl_bch(bch_payload, SRSLTE_BCH_PAYLOAD_LEN, true, sfn * 10 + sf_idx);
             }
           }
           break;
@@ -755,12 +762,19 @@ int main(int argc, char** argv)
               decode_pdsch = false;
             }
           } else {
+#if 0
             /* We are looking for SIB1 Blocks, search only in appropiate places */
             if ((sf_idx == 5 && (sfn % 2) == 0) || mch_table[sf_idx] == 1) {
               decode_pdsch = true;
             } else {
               decode_pdsch = false;
             }
+#else
+            /* Get all possible SIBs (brute force approach = don't calculate SI occasions) */
+            if (srslte_sfidx_tdd_type(dl_sf.tdd_config, sf_idx) == SRSLTE_TDD_SF_D) {
+              decode_pdsch = true;
+            }
+#endif
           }
 
           uint32_t tti = sfn * 10 + sf_idx;
@@ -800,6 +814,18 @@ int main(int argc, char** argv)
                           pkt_errors++;
                         } else {
                           pmch_pkt_errors++;
+                        }
+                      } else {
+                        if (prog_args.rnti == SRSLTE_SIRNTI) {
+                          mac_pcap.write_dl_sirnti(data[tb], pdsch_cfg.grant.tb[tb].tbs, true, tti);
+                        } else if (prog_args.rnti == SRSLTE_PRNTI) {
+                          mac_pcap.write_dl_pch(data[tb], pdsch_cfg.grant.tb[tb].tbs, true, tti);
+                        } else if (prog_args.rnti == SRSLTE_MRNTI) {
+                          mac_pcap.write_dl_mch(data[tb], pdsch_cfg.grant.tb[tb].tbs, true, tti);
+                        } else if (prog_args.rnti >= SRSLTE_RARNTI_START && prog_args.rnti <= SRSLTE_RARNTI_END) {
+                          mac_pcap.write_dl_ranti(data[tb], pdsch_cfg.grant.tb[tb].tbs, prog_args.rnti, true, tti);
+                        } else if (prog_args.rnti >= SRSLTE_CRNTI_START && prog_args.rnti <= SRSLTE_CRNTI_END) {
+                          mac_pcap.write_dl_crnti(data[tb], pdsch_cfg.grant.tb[tb].tbs, prog_args.rnti, true, tti);
                         }
                       }
                       if (sf_type == SRSLTE_SF_NORM) {
@@ -990,6 +1016,8 @@ int main(int argc, char** argv)
     srslte_rf_close(&rf);
   }
 #endif
+
+  mac_pcap.close();
 
   printf("\nBye\n");
   exit(0);
