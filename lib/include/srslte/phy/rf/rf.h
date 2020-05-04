@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 Software Radio Systems Limited
+ * Copyright 2013-2020 Software Radio Systems Limited
  *
  * This file is part of srsLTE.
  *
@@ -28,6 +28,8 @@
 #include <sys/time.h>
 
 #include "srslte/config.h"
+
+#define RF_PARAM_LEN (256)
 
 typedef struct {
   void* handler;
@@ -67,13 +69,13 @@ typedef struct {
 extern "C" {
 #endif
 
-typedef void (*srslte_rf_error_handler_t)(srslte_rf_error_t error);
+typedef void (*srslte_rf_error_handler_t)(void* arg, srslte_rf_error_t error);
 
 SRSLTE_API int srslte_rf_open(srslte_rf_t* h, char* args);
 
 SRSLTE_API int srslte_rf_open_multi(srslte_rf_t* h, char* args, uint32_t nof_channels);
 
-SRSLTE_API int srslte_rf_open_devname(srslte_rf_t* h, char* devname, char* args, uint32_t nof_channels);
+SRSLTE_API int srslte_rf_open_devname(srslte_rf_t* h, const char* devname, char* args, uint32_t nof_channels);
 
 SRSLTE_API const char* srslte_rf_name(srslte_rf_t* h);
 
@@ -107,7 +109,7 @@ SRSLTE_API srslte_rf_info_t* srslte_rf_get_info(srslte_rf_t* h);
 
 SRSLTE_API void srslte_rf_suppress_stdout(srslte_rf_t* h);
 
-SRSLTE_API void srslte_rf_register_error_handler(srslte_rf_t* h, srslte_rf_error_handler_t error_handler);
+SRSLTE_API void srslte_rf_register_error_handler(srslte_rf_t* h, srslte_rf_error_handler_t error_handler, void* arg);
 
 SRSLTE_API double srslte_rf_set_rx_freq(srslte_rf_t* h, uint32_t ch, double freq);
 
@@ -151,7 +153,7 @@ SRSLTE_API int srslte_rf_send_timed2(srslte_rf_t* h,
                                      bool         is_end_of_burst);
 
 SRSLTE_API int srslte_rf_send_timed_multi(srslte_rf_t* rf,
-                                          void*        data[4],
+                                          void**       data,
                                           int          nsamples,
                                           time_t       secs,
                                           double       frac_secs,
@@ -160,7 +162,7 @@ SRSLTE_API int srslte_rf_send_timed_multi(srslte_rf_t* rf,
                                           bool         is_end_of_burst);
 
 SRSLTE_API int srslte_rf_send_multi(srslte_rf_t* rf,
-                                    void*        data[4],
+                                    void**       data,
                                     int          nsamples,
                                     bool         blocking,
                                     bool         is_start_of_burst,
